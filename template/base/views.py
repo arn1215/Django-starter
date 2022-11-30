@@ -3,12 +3,6 @@ from django.http import HttpResponse
 from .models import Room
 
 
-rooms = [
-  {'id': 1, 'name': 'mahogany room'},
-  {'id': 2, 'name': 'tobacco room'},
-  {'id': 3, 'name': 'clovewood room'},
-]
-
 
 # Create your views here.
 
@@ -18,9 +12,6 @@ def home(req):
     return render(req, 'base/home.html', context)
 
 def room(req, pk):
-    room = None
-    for i in rooms:
-      if i['id'] == int(pk):
-        room = i
+    room = Room.objects.get(id=pk)
     context = {'room': room}
     return render(req, 'base/room.html', context)
