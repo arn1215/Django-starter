@@ -7,10 +7,15 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
 # Create your views here.
 
 
 def loginPage(req): 
+  page = 'login'
+  print(page)
+  if req.user.is_authenticated:
+    return redirect('home')
 
   if req.method == 'POST':
     username = req.POST.get('username')
@@ -30,12 +35,17 @@ def loginPage(req):
     else:
       messages.error(req, "username or password does not exist.")
       
-  context = {}
+  context = {'page': page}
   return render(req, 'base/login_register.html', context)
 
 def logoutUser(req):
   logout(req)
   return redirect('home')
+
+def registerPage(req):
+  page = 'register'
+  form = UserCreationForm()
+  return render(req, 'base/login_register.html', {'form': form})
 
 def home(req):
     
@@ -91,6 +101,10 @@ def updateRoom(req, pk):
 
 def deleteRoom(req, pk):
   room = Room.objects.get(id=pk)
+
+  if req.user != room.host:
+    return HttpResponse("Oops you're not suppose to be here...")
+
   if req.method == "POST":
     room.delete()
     return redirect('home')
