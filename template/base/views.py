@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from .models import Room, Topic
+from .models import Room, Topic, Message
 from .forms import RoomForm
 from django.db.models import Q
 from django.contrib.auth.models import User
@@ -18,7 +18,7 @@ def loginPage(req):
     return redirect('home')
 
   if req.method == 'POST':
-    username = req.POST.get('username')
+    username = req.POST.get('username').lower()
     password = req.POST.get('password')
     print(username, password)
 
@@ -43,8 +43,22 @@ def logoutUser(req):
   return redirect('home')
 
 def registerPage(req):
-  page = 'register'
+
   form = UserCreationForm()
+
+  if req.method == 'POST':
+    form = UserCreationForm(req.POST)
+
+    if form.is_valid():
+      user = form.save(commit=False)
+      user.username = user.username.lower()
+      user.save()
+      login(req, user)
+      return redirect('home')
+
+    else:
+      messages.error(req, 'An error occured during registration...')
+
   return render(req, 'base/login_register.html', {'form': form})
 
 def home(req):
@@ -66,7 +80,19 @@ def home(req):
 
 def room(req, pk):
     room = Room.objects.get(id=pk)
-    context = {'room': room}
+    #descending order by creation
+    room_messages = room.message_set.all().order_by('-created')
+
+
+    if req.method == 'POST':
+      message = Message.objects.create(
+        user = req.user,
+        room = room,
+        body = req.POST.get('body')
+      )
+      return redirect('room', pk=room.id)
+      
+    context = {'room': room, 'room_messages': room_messages}
     return render(req, 'base/room.html', context)
 
 @login_required(login_url='login')
