@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-
+from django.contrib.auth.decorators import login_required
 # Create your views here.
 
 
@@ -59,6 +59,7 @@ def room(req, pk):
     context = {'room': room}
     return render(req, 'base/room.html', context)
 
+@login_required(login_url='login')
 def createRoom(req):
   form = RoomForm()
   if req.method == 'POST':
@@ -71,9 +72,13 @@ def createRoom(req):
   context = {'form': form}
   return render(req, 'base/room_form.html', context)
 
+@login_required(login_url='login')
 def updateRoom(req, pk):
     room = Room.objects.get(id=pk)
     form = RoomForm(instance=room)
+
+    if req.user != room.host:
+      return HttpResponse("Oops you're not suppose to be here...")
 
     if req.method == 'POST':
       form = RoomForm(req.POST, instance=room)
